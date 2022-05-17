@@ -1,8 +1,7 @@
 // ==UserScript==
 // @name         PokéClicker Auto-Dungeon-Gym
-// @namespace    https://github.com/SabrinaGuan/Pok-Clicker-Auto-Dungeon-Gym/edit/main/Pok%C3%A9Clicker%20Auto-Dungeon-Gym.js
+// @namespace    https://github.com/SabrinaGuan/Pok-Clicker-Auto-Dungeon-Gym/
 // @version      0.9.3
-// @downloadURL  
 // @match        http://idlegame.gitee.io/pokeclicker/
 // @match       https://g8hh.github.io/pokeclicker/
 // @match       https://www.pokeclicker.com/
