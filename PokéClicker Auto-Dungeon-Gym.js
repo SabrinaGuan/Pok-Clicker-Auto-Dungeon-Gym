@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name         PokéClicker Auto-Dungeon-Gym
-// @namespace    https://github.com/SabrinaGuan/Pok-Clicker-Auto-Dungeon-Gym/
-// @version      0.9.3
+// @namespace
+// @version      0.4
+// @downloadURL
 // @match        http://idlegame.gitee.io/pokeclicker/
 // @match       https://g8hh.github.io/pokeclicker/
 // @match       https://www.pokeclicker.com/
@@ -14,6 +15,7 @@ var status = {
 	gymTarget: null,
 	runtime: 0,
 	runModule: null,
+	inBoss: 0,
 }
 
 var limitRun
@@ -59,6 +61,7 @@ function autoCheck(status, btn) {
 
 function Counter() {
 	status.runtime++;
+	console.log('爬完一次，共：' + status.runtime + '次');
 }
 
 function resetRuntime() {
@@ -214,10 +217,10 @@ function main() {
 			if (limitTime && limitTime > 0) {
 				console.log('limit')
 				limitRun = setInterval(function () {
-					if (status.runtime > limitTime) {
+					if (status.runtime >= limitTime) {
 						autoCheck(status, 0);
 						clearInterval(limitRun);
-						console.log('limit finished');
+						console.log('finished');
 					} else {
 						if (status.autoRun === 0 && !status.runModule) {
 							autoDungeon();
@@ -236,11 +239,11 @@ function main() {
 		if (checkGym.checked) {
 			if (limitTime && limitTime > 0) {
 				limitRun = setInterval(function () {
-					if (status.runtime > limitTime) {
+					if (status.runtime >= limitTime) {
 						autoCheck(status, 0);
 						clearInterval(limitRun);
-					 	status.gymTarget = null;
-						console.log('limit finished');
+						status.gymTarget = null;
+						console.log('finished');
 					} else {
 						if (status.autoRun === 0 && !status.runModule) {
 							autoGym();
@@ -251,7 +254,7 @@ function main() {
 				console.log('unlimit');
 				unlimitRun = setInterval(function () {
 					if (status.autoRun === 0 && !status.runModule) {
-						console.log(status.autoRun)
+						console.log(status.autoRun);
 						autoGym();
 					}
 				}, 1011);
@@ -277,33 +280,48 @@ function autoGym() {
 		gymList = document.querySelectorAll('#townView > div:nth-child(2)> .col-4.no-gutters > .list-group > .btn-group.btn-block > button.btn-success');
 	}
 
-	if (gymList.length > 0){
+	if (!gymList || !gymList.length) {
+		return;
+	}
+
+	if (gymList.length > 0) {
 		autoCheck(status, 1);
-		if (!status.gymTarget){
-			if (gymList.length == 1){
+		if (status.gymTarget === null) {
+			if (gymList.length == 1) {
 				status.gymTarget = 0;
-			}else{
-				status.gymTarget = prompt()-1;
+			} else {
+				status.gymTarget = prompt() - 1;
 			}
 		}
 
-		if (status.gymTarget<gymList.length){
-			status.runModule =  setInterval(() => {
-				if (App.game.gameState == 3){
+		if (status.gymTarget < gymList.length) {
+			status.runModule = setInterval(() => {
+				if (App.game.gameState == 6) {
+					Counter();
+					gymList[status.gymTarget].click();
 					clearInterval(status.runModule);
 					status.runModule = null;
 					autoCheck(status, 0);
-					Counter();
 					return;
-				}else{
-					gymList[status.gymTarget].click();
 				}
 			}, 50);
-		}else{
-			alert('error!')
+		} else {
+
+			if (status.gymTarget) {
+				console.log(status.gymTarget);
+			}
+
+			if (status.gymTarget < gymList.length) {
+
+				console.log(status.gymTarget, gymList.length);
+			}
+
+			alert('error!');
+			clearInterval(status.runModule);
+			status.runModule = null;
 		}
 
-	}else{
+	} else {
 		alert('Not Gym');
 		clearInterval(unlimitRun);
 		clearInterval(limitRun);
@@ -317,26 +335,34 @@ function autoDungeon() {
 		var btn = document.querySelector("#townView > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button.btn.btn-success.p-0");
 		var cost = btn.querySelector('span').innerText;
 		if (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= parseInt(cost)) {
+			status.inBoss = 0;
 			btn.click();
 		}
 	} else {
-		if (DungeonRunner.map != undefined && Battle.catching() != true) {
-			autoCheck(status, 1);
-			status.runModule = setInterval(() => {
-				if (App.game.gameState == 6) {
-					Counter();
-					clearInterval(status.runModule);
-					status.runModule = null;
-					autoCheck(status, 0);
-					return;
-				}
-				moveJudge().then((key) => {
-					if (key == 4) {
+		if (DungeonRunner.map != undefined) {
+			if (Battle.catching() != true) {
+
+				autoCheck(status, 1);
+				status.runModule = setInterval(() => {
+					if (App.game.gameState == 6) {
 						Counter();
+						clearInterval(status.runModule);
+						status.runModule = null;
+						autoCheck(status, 0);
 						return;
 					}
-				});
-			}, 150);
+
+					moveJudge().then((key) => {
+						if (key == 4) {
+							status.inBoss++;
+							if (status.inBoss == 1) {
+								Counter();
+							}
+							return;
+						}
+					});
+				}, 150);
+			}
 
 		} else {
 			alert('here is not dungeon');
